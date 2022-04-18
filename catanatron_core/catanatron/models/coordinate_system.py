@@ -36,6 +36,19 @@ def num_tiles_for(layer):
 
     return 6 * layer + num_tiles_for(layer - 1)
 
+def subtract(p1, p2):
+    (x, y, z) = acoord
+    (u, v, w) = bcoord
+    return (x - u, y - v, z - w)
+
+# Implementation of distance found in
+# https://www.redblobgames.com/grids/hexagons/implementation.html#hex-distance
+def hex_length(hex):
+    (x,y,z) = hex
+    return int(abs(x) + abs(y) + abs(z)/2)
+
+def hex_distance(p1, p2):
+    return hex_length(p1-p2)
 
 def generate_coordinate_system(num_layers):
     """

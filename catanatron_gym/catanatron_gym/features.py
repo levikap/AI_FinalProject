@@ -209,8 +209,13 @@ def graph_features(game: Game, p0_color: Color):
 
 
 def build_production_features(consider_robber):
+    # build_production_features creates a sampling function that returns the expected
+    # production of a player depending on if we consider robbers or not  
     prefix = "EFFECTIVE_" if consider_robber else "TOTAL_"
 
+    # production_features accepts a game and a player, and returns a map of expected 
+    # resource production from keys "EFFECTIVE_P0_{RESOURCE}_PRODUCTION" FOR ALL PLAYERS
+    # P0 is always the current player - unclear why we're not keying on the color
     def production_features(game: Game, p0_color: Color):
         # P0_WHEAT_PRODUCTION, P0_ORE_PRODUCTION, ..., P1_WHEAT_PRODUCTION, ...
         features = {}
@@ -240,6 +245,11 @@ def build_production_features(consider_robber):
         return features
 
     return production_features
+
+
+def distance_discounted_production_value(consider_robber):
+    # For consistency with the 'build_production_features' above
+    prefix = "EFFECTIVE_" if consider_robber else "TOTAL_"
 
 
 # @functools.lru_cache(maxsize=None)

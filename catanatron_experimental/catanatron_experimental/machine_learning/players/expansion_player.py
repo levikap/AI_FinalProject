@@ -3,6 +3,7 @@ import time
 import random
 from typing import Any
 from catanatron.models.map import get_node_counter_production
+from catanatron_experimental.cli.cli_players import register_player
 
 from catanatron.state_functions import (
     get_longest_road_length,
@@ -16,7 +17,12 @@ from catanatron.game import Game
 from catanatron.models.player import Player
 from catanatron.models.actions import ActionType
 from catanatron.models.enums import RESOURCES, BuildingType
-from catanatron_gym.catanatron_gym.features import REACHABLE_FEATURES_MAX, get_node_production, get_zero_nodes, iter_level_nodes
+from catanatron_gym.features import (
+    REACHABLE_FEATURES_MAX,
+    get_node_production, 
+    get_zero_nodes, 
+    iter_level_nodes
+)
 from catanatron_gym.features import (
     build_production_features,
     reachability_features,

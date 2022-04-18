@@ -146,7 +146,7 @@ def base_fn(params=DEFAULT_WEIGHTS):
             
             for node_id in level_nodes:
                 if node_id in buildable_node_ids:
-                    effective_node_production = game.board.map.node_production[node_id]
+                    effective_node_production = game.state.board.map.node_production[node_id]
 
                     #O(1) - at most 5                
                     for resource, value in effective_node_production.items():

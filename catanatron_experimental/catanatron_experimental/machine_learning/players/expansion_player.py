@@ -155,7 +155,7 @@ def base_fn(params=DEFAULT_WEIGHTS):
         print(sum(adjustedExpectedProduction.values()))
 
         # This is just maximizing effective production values 
-        return sum(adjustedExpectedProduction.values()) + exp_production_value
+        return sum(adjustedExpectedProduction.values() + exp_production_value.values())
 
             
             

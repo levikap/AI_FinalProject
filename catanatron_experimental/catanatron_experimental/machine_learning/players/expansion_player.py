@@ -152,10 +152,10 @@ def base_fn(params=DEFAULT_WEIGHTS):
                     for resource, value in effective_node_production.items():
                         adjustedExpectedProduction[resource] = value / level
                     
-
+        print(sum(adjustedExpectedProduction.values()))
 
         # This is just maximizing effective production values 
-        return sum(adjustedExpectedProduction.values())
+        return sum(adjustedExpectedProduction.values()) + exp_production_value
 
             
             

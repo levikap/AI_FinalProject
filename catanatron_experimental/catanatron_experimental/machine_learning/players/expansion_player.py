@@ -136,7 +136,7 @@ def base_fn(params=DEFAULT_WEIGHTS):
         production_features = build_production_features(True)
         exp_production_value =  production_features(game, p0_color)
 
-        buildable_node_ids = set(game.state.board.buildable_node_ids())
+        buildable_node_ids = set(game.state.board.buildable_node_ids(p0_color))
 
         adjustedExpectedProduction = defaultdict(float)
 

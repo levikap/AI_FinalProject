@@ -19,8 +19,8 @@ from catanatron.models.actions import ActionType
 from catanatron.models.enums import RESOURCES, BuildingType
 from catanatron_gym.features import (
     REACHABLE_FEATURES_MAX,
-    get_node_production, 
-    get_zero_nodes, 
+    get_node_production,
+    get_zero_nodes,
     iter_level_nodes
 )
 from catanatron_gym.features import (
@@ -127,7 +127,7 @@ def get_value_fn(name, params, value_function=None):
 def base_fn(params=DEFAULT_WEIGHTS):
     def fn(game, p0_color):
         """
-            The expansion player measures the value of a state by computing the 
+            The expansion player measures the value of a state by computing the
             current expected production of a player, as well as the expected value
             of every settlable location on the board (weighted by the minimum number
             of roads away)
@@ -143,22 +143,22 @@ def base_fn(params=DEFAULT_WEIGHTS):
         zero_nodes = get_zero_nodes(game, p0_color)
         # This whole thing is at most O(# of nodes in the map)
         for level, level_nodes in iter_level_nodes(game, p0_color, REACHABLE_FEATURES_MAX, zero_nodes):
-            
+
             for node_id in level_nodes:
                 if node_id in buildable_node_ids:
                     effective_node_production = game.state.board.map.node_production[node_id]
 
-                    #O(1) - at most 5                
+                    #O(1) - at most 5
                     for resource, value in effective_node_production.items():
                         adjustedExpectedProduction[resource] = value / level
-                    
-        print(sum(adjustedExpectedProduction.values()))
 
-        # This is just maximizing effective production values 
-        return sum(adjustedExpectedProduction.values() + exp_production_value.values())
+        print(sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values()))
 
-            
-            
+        # This is just maximizing effective production values
+        return sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values())
+
+
+
 
     return fn
 

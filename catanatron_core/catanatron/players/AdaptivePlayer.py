@@ -147,8 +147,8 @@ def base_fn(params=DEFAULT_WEIGHTS):
         most_produced_2 = set([keys_list[0], keys_list[1]])
         most_produced_3 = set([keys_list[0], keys_list[1], keys_list[2]])
 
-        city_bonus = 10
-        settlement_bonus = 10
+        city_bonus = 15
+        settlement_bonus = 3
         road_bonus = 10
 
         buildings = game.state.buildings_by_color[p0_color]
@@ -164,7 +164,7 @@ def base_fn(params=DEFAULT_WEIGHTS):
         # producing a lot of the dev card resources, so buy a lot of dev cards
         if most_produced_3 == set(["sheep", "wheat", "ore"]):
             params["army_size"] = 30
-            params["hand_devs"] = 15
+            params["hand_devs"] = 12
 
         if most_produced_2 == set(["ore", "wheat"]):
             city_bonus = city_bonus * len(cities)

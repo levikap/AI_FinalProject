@@ -98,6 +98,7 @@ class ValueFunctionPlayer(Player):
                 best_value = value
                 best_action = action
 
+        print("Decision Results:", best_action)
         return best_action
 
     def __str__(self):

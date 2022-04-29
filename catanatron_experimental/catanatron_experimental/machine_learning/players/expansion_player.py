@@ -71,7 +71,7 @@ CONTENDER_WEIGHTS = {
 }
 
 @register_player("ExpansionPlayer")
-class GreedyExpansionPlayer(Player):
+class ExpansionPlayer(Player):
     """
     Player that selects the move that maximizes a heuristic value function.
 
@@ -106,7 +106,7 @@ class GreedyExpansionPlayer(Player):
             if value > best_value:
                 best_value = value
                 best_action = action
-
+        print("Decision Results:", best_action)
         return best_action
 
     def __str__(self):
@@ -136,8 +136,13 @@ def base_fn(params=DEFAULT_WEIGHTS):
         production_features = build_production_features(True)
         exp_production_value =  production_features(game, p0_color)
 
-        buildable_node_ids = set(game.state.board.buildable_node_ids(p0_color))
+        buildable_node_ids = set(game.state.board.board_buildable_ids)
 
+        if len(buildable_node_ids) == 0:
+            print("buildable node_ids is empty")
+            return 0
+
+        #print(buildable_node_ids)
         adjustedExpectedProduction = defaultdict(float)
 
         zero_nodes = get_zero_nodes(game, p0_color)
@@ -146,13 +151,14 @@ def base_fn(params=DEFAULT_WEIGHTS):
 
             for node_id in level_nodes:
                 if node_id in buildable_node_ids:
+
                     effective_node_production = game.state.board.map.node_production[node_id]
 
                     #O(1) - at most 5
                     for resource, value in effective_node_production.items():
                         adjustedExpectedProduction[resource] = value / level
 
-        print(sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values()))
+        #print(sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values()))
 
         # This is just maximizing effective production values
         return sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values())

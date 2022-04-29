@@ -1,6 +1,9 @@
+from collections import defaultdict
 import time
 import random
 from typing import Any
+from catanatron.models.map import get_node_counter_production
+from catanatron_experimental.cli.cli_players import register_player
 
 from catanatron.state_functions import (
     get_longest_road_length,
@@ -14,6 +17,12 @@ from catanatron.game import Game
 from catanatron.models.player import Player
 from catanatron.models.actions import ActionType
 from catanatron.models.enums import RESOURCES, BuildingType
+from catanatron_gym.features import (
+    REACHABLE_FEATURES_MAX,
+    get_node_production,
+    get_zero_nodes,
+    iter_level_nodes
+)
 from catanatron_gym.features import (
     build_production_features,
     reachability_features,
@@ -61,8 +70,8 @@ CONTENDER_WEIGHTS = {
     "army_size": 12.93844622,
 }
 
-
-class ValueFunctionPlayer(Player):
+@register_player("ExpansionPlayer")
+class ExpansionPlayer(Player):
     """
     Player that selects the move that maximizes a heuristic value function.
 
@@ -97,7 +106,6 @@ class ValueFunctionPlayer(Player):
             if value > best_value:
                 best_value = value
                 best_action = action
-
         print("Decision Results:", best_action)
         return best_action
 
@@ -118,67 +126,45 @@ def get_value_fn(name, params, value_function=None):
 
 def base_fn(params=DEFAULT_WEIGHTS):
     def fn(game, p0_color):
+        """
+            The expansion player measures the value of a state by computing the
+            current expected production of a player, as well as the expected value
+            of every settlable location on the board (weighted by the minimum number
+            of roads away)
+        """
+
         production_features = build_production_features(True)
-        our_production_sample = production_features(game, p0_color)
-        enemy_production_sample = production_features(game, p0_color)
-        production = value_production(our_production_sample, "P0")
-        enemy_production = value_production(enemy_production_sample, "P1", False)
+        exp_production_value =  production_features(game, p0_color)
 
-        key = player_key(game.state, p0_color)
-        longest_road_length = get_longest_road_length(game.state, p0_color)
+        buildable_node_ids = set(game.state.board.board_buildable_ids)
 
-        reachability_sample = reachability_features(game, p0_color, 2)
-        features = [f"P0_0_ROAD_REACHABLE_{resource}" for resource in RESOURCES]
-        reachable_production_at_zero = sum([reachability_sample[f] for f in features])
-        features = [f"P0_1_ROAD_REACHABLE_{resource}" for resource in RESOURCES]
-        reachable_production_at_one = sum([reachability_sample[f] for f in features])
+        if len(buildable_node_ids) == 0:
+            print("buildable node_ids is empty")
+            return 0
 
-        hand_sample = resource_hand_features(game, p0_color)
-        features = [f"P0_{resource}_IN_HAND" for resource in RESOURCES]
-        distance_to_city = (
-            max(2 - hand_sample["P0_WHEAT_IN_HAND"], 0)
-            + max(3 - hand_sample["P0_ORE_IN_HAND"], 0)
-        ) / 5.0  # 0 means good. 1 means bad.
-        distance_to_settlement = (
-            max(1 - hand_sample["P0_WHEAT_IN_HAND"], 0)
-            + max(1 - hand_sample["P0_SHEEP_IN_HAND"], 0)
-            + max(1 - hand_sample["P0_BRICK_IN_HAND"], 0)
-            + max(1 - hand_sample["P0_WOOD_IN_HAND"], 0)
-        ) / 4.0  # 0 means good. 1 means bad.
-        hand_synergy = (2 - distance_to_city - distance_to_settlement) / 2
+        #print(buildable_node_ids)
+        adjustedExpectedProduction = defaultdict(float)
 
-        num_in_hand = player_num_resource_cards(game.state, p0_color)
-        discard_penalty = params["discard_penalty"] if num_in_hand > 7 else 0
+        zero_nodes = get_zero_nodes(game, p0_color)
+        # This whole thing is at most O(# of nodes in the map)
+        for level, level_nodes in iter_level_nodes(game, p0_color, REACHABLE_FEATURES_MAX, zero_nodes):
 
-        # blockability
-        buildings = game.state.buildings_by_color[p0_color]
-        owned_nodes = buildings[BuildingType.SETTLEMENT] + buildings[BuildingType.CITY]
-        owned_tiles = set()
-        for n in owned_nodes:
-            owned_tiles.update(game.state.board.map.adjacent_tiles[n])
-        num_tiles = len(owned_tiles)
+            for node_id in level_nodes:
+                if node_id in buildable_node_ids:
 
-        # TODO: Simplify to linear(?)
-        num_buildable_nodes = len(game.state.board.buildable_node_ids(p0_color))
-        longest_road_factor = (
-            params["longest_road"] if num_buildable_nodes == 0 else 0.1
-        )
+                    effective_node_production = game.state.board.map.node_production[node_id]
 
-        return float(
-            game.state.player_state[f"{key}_VICTORY_POINTS"] * params["public_vps"]
-            + production * params["production"]
-            + enemy_production * params["enemy_production"]
-            + reachable_production_at_zero * params["reachable_production_0"]
-            + reachable_production_at_one * params["reachable_production_1"]
-            + hand_synergy * params["hand_synergy"]
-            + num_buildable_nodes * params["buildable_nodes"]
-            + num_tiles * params["num_tiles"]
-            + num_in_hand * params["hand_resources"]
-            + discard_penalty
-            + longest_road_length * longest_road_factor
-            + player_num_dev_cards(game.state, p0_color) * params["hand_devs"]
-            + get_played_dev_cards(game.state, p0_color, "KNIGHT") * params["army_size"]
-        )
+                    #O(1) - at most 5
+                    for resource, value in effective_node_production.items():
+                        adjustedExpectedProduction[resource] = value / level
+
+        #print(sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values()))
+
+        # This is just maximizing effective production values
+        return sum(adjustedExpectedProduction.values()) + sum(exp_production_value.values())
+
+
+
 
     return fn
 
